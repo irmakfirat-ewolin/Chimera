@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Chimera">
+<meta name="theme-color" content="#9E2F1E">
+<title>Chimera</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --table:#9E2F1E; --deep:#6B1C11; --deeper:#4E140C;
+  --paper:#F4ECD9; --ink:#1E1A16; --gold:#DDB45E; --gold2:#B98E35;
+  --jade:#1F7A55; --sword:#2A2622; --pag:#1E5DA6; --star:#C23A27;
+  --serif:'Shippori Mincho','Hiragino Mincho ProN','Songti SC',Georgia,serif;
+  --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+body{
+  background-color:var(--table);
+  background-image:
+    radial-gradient(circle at 50% 100%,transparent 42%,rgba(0,0,0,.07) 43%,rgba(0,0,0,.07) 49%,transparent 50%),
+    radial-gradient(circle at 50% 100%,transparent 42%,rgba(0,0,0,.07) 43%,rgba(0,0,0,.07) 49%,transparent 50%);
+  background-size:40px 20px;background-position:0 0,20px 10px;
+  color:var(--paper);font:15px/1.4 var(--sans);
+  overscroll-behavior:none;-webkit-user-select:none;user-select:none;
+}
+#app{height:100%;display:flex;flex-direction:column;
+  padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}
+button{font:inherit;color:inherit}
+.btn{font:600 16px var(--sans);padding:12px 16px;border-radius:12px;border:none;background:var(--paper);color:var(--ink);min-height:46px;cursor:pointer}
+.btn.gold{background:var(--gold)}
+.btn.ghost{background:transparent;color:var(--paper);border:1px solid rgba(244,236,217,.45)}
+.btn:disabled{opacity:.35}
+.btn:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+input,select{font:16px var(--sans);padding:12px;border-radius:10px;border:1px solid rgba(0,0,0,.2);background:var(--paper);color:var(--ink);width:100%}
+
+/* ---------- Home / Lobby ---------- */
+.screen{flex:1;overflow:auto;padding:28px 22px;display:flex;flex-direction:column;gap:14px;max-width:460px;width:100%;margin:0 auto}
+.brand{font:800 54px/1 var(--serif);letter-spacing:.04em;margin:10px 0 0;color:var(--paper);text-shadow:0 2px 0 var(--deeper)}
+.brand small{display:block;font:600 15px var(--sans);letter-spacing:0;opacity:.75;margin-top:10px;text-shadow:none}
+.panel{background:rgba(78,20,12,.55);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.panel h3{margin:0;font:600 15px var(--sans);opacity:.85}
+.row{display:flex;gap:10px;align-items:center}
+.row>*{flex:1}
+.bigcode{font:800 48px/1 var(--serif);letter-spacing:.2em;color:var(--gold);text-align:center;padding:6px 0}
+.seats{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.seats li{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-radius:12px;background:rgba(244,236,217,.08)}
+.seats li.empty{opacity:.5;font-style:italic}
+.err{color:#FFD2C4;font-size:14px}
+.note{font-size:13px;opacity:.75;margin:0}
+
+/* ---------- Game ---------- */
+.top{display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(78,20,12,.6)}
+.code{background:none;border:1px solid rgba(244,236,217,.35);border-radius:9px;padding:6px 9px;font:800 14px var(--serif);letter-spacing:.1em;color:var(--gold)}
+.scores{flex:1;display:flex;gap:6px;overflow:hidden}
+.sc{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;padding:3px 4px;border-radius:8px}
+.sc span{font-size:11px;opacity:.8;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sc b{font:800 17px/1.1 var(--serif)}
+.sc.me{background:rgba(221,180,94,.18)}
+.lim{font-size:11px;opacity:.6}
+
+.opps{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:8px 10px 0}
+.opp{position:relative;background:rgba(78,20,12,.5);border-radius:12px;padding:8px 10px;border:2px solid transparent;min-height:72px}
+.opp.turn{border-color:var(--gold);box-shadow:0 0 0 3px rgba(221,180,94,.18)}
+.opp.off{opacity:.55}
+.nm{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:9em;display:inline-block;vertical-align:bottom}
+.role{display:inline-block;font:700 11px var(--sans);padding:2px 7px;border-radius:20px;margin-left:5px;vertical-align:middle}
+.role.c{background:var(--gold);color:var(--ink)}
+.role.h{background:rgba(244,236,217,.18)}
+.cnt{display:flex;align-items:center;gap:6px;margin-top:6px}
+.cnt b{font:800 22px/1 var(--serif)}
+.mini{width:16px;height:22px;border-radius:3px;background:var(--deep);border:1.5px solid var(--gold2);
+  background-image:repeating-linear-gradient(45deg,transparent 0 3px,rgba(221,180,94,.35) 3px 4px)}
+.sub{font-size:12px;opacity:.7}
+.bubble{position:absolute;right:8px;top:8px;background:var(--paper);color:var(--ink);font:800 13px var(--serif);padding:3px 9px;border-radius:12px}
+.bubble.pass{background:rgba(244,236,217,.25);color:var(--paper);font-family:var(--sans);font-weight:600}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#7CD992;margin-right:5px;vertical-align:middle}
+.off .dot{background:#888}
+
+.center{flex:1;overflow:auto;padding:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center}
+.trick{display:flex;flex-direction:column;align-items:center;gap:6px}
+.trick .who{font-size:13px;opacity:.8}
+.combo{font:700 17px var(--serif);color:var(--gold)}
+.cardrow{display:flex;flex-wrap:wrap;justify-content:center;padding-left:14px;row-gap:6px;--cw:42px;--ch:62px}
+.cardrow .card{margin-left:-14px}
+.lead{font:700 20px var(--serif)}
+.log{font-size:13px;opacity:.72;display:flex;flex-direction:column;gap:2px}
+.tally{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.tag{font-size:12px;padding:3px 9px;border-radius:20px;background:rgba(244,236,217,.14)}
+.bigmsg{font:800 22px/1.25 var(--serif);margin:0}
+.fu{display:flex;align-items:center;gap:10px;justify-content:center;--cw:42px;--ch:62px}
+
+table.res{border-collapse:collapse;width:100%;max-width:400px;font-size:14px}
+table.res th,table.res td{padding:7px 5px;text-align:right;border-bottom:1px solid rgba(244,236,217,.15)}
+table.res th:first-child,table.res td:first-child{text-align:left}
+table.res th{font-weight:600;opacity:.7;font-size:12px}
+table.res td.tot{font:800 16px var(--serif);color:var(--gold)}
+
+.me{background:rgba(78,20,12,.65);padding:8px 10px 10px;border-top:1px solid rgba(221,180,94,.25)}
+.me.turn{box-shadow:inset 0 3px 0 var(--gold)}
+.meinfo{display:flex;align-items:center;gap:6px;font-size:14px;margin-bottom:4px}
+.meinfo .yt{margin-left:auto;font:700 13px var(--sans);color:var(--ink);background:var(--gold);padding:3px 10px;border-radius:20px;animation:pulse 1.4s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.6}}
+@media (prefers-reduced-motion:reduce){.meinfo .yt{animation:none}.card{transition:none!important}}
+.hand{display:flex;flex-wrap:wrap;padding:14px 0 2px 18px;row-gap:10px;--cw:50px;--ch:74px;min-height:92px}
+.hand .card{margin-left:-18px;cursor:pointer}
+.hint{font-size:14px;min-height:20px;margin:6px 0;text-align:center}
+.hint.bad{color:#FFD2C4}
+.hint.good{color:var(--gold);font-family:var(--serif);font-weight:700}
+.ctrl{display:flex;gap:8px}
+.ctrl .btn{flex:1}
+
+/* ---------- Cards ---------- */
+.card{position:relative;width:var(--cw);height:var(--ch);flex:none;border-radius:7px;background:var(--paper);
+  border:1px solid rgba(0,0,0,.22);box-shadow:0 1px 0 rgba(0,0,0,.2),-2px 2px 6px rgba(0,0,0,.25);transition:transform .12s;color:var(--c)}
+.card .v{position:absolute;left:4px;top:3px;font:800 calc(var(--cw)*.36)/1 var(--serif)}
+.card .g{position:absolute;left:5px;top:calc(var(--cw)*.44);font-size:calc(var(--cw)*.24);line-height:1}
+.card .big{position:absolute;right:4px;bottom:3px;font:800 calc(var(--cw)*.46)/1 var(--serif);opacity:.85}
+.card .tr{position:absolute;right:3px;top:3px;min-width:calc(var(--cw)*.36);height:calc(var(--cw)*.36);border-radius:50%;
+  background:var(--gold);color:var(--ink);font:800 calc(var(--cw)*.2)/calc(var(--cw)*.36) var(--sans);text-align:center;font-style:normal}
+.s-j{--c:var(--jade)} .s-s{--c:var(--sword)} .s-p{--c:var(--pag)} .s-t{--c:var(--star)}
+.card.hero{background:linear-gradient(160deg,#FBF4E2,#E9D9B4)}
+.card.piya{--c:#F4ECD9;background:linear-gradient(160deg,#3E6B4E,#1F3F2C);border-color:var(--gold2)}
+.card.chim{--c:var(--gold);background:linear-gradient(160deg,#5A1610,#2A0906);border-color:var(--gold)}
+.card.sel{transform:translateY(-13px);box-shadow:0 0 0 2px var(--gold),-2px 6px 12px rgba(0,0,0,.35)}
+.card.fresh::after{content:'';position:absolute;left:50%;bottom:4px;width:6px;height:6px;margin-left:-3px;border-radius:50%;background:var(--gold2)}
+
+/* ---------- Overlay ---------- */
+.ov{position:fixed;inset:0;background:rgba(30,10,6,.6);display:flex;align-items:flex-end;justify-content:center;z-index:20}
+.sheet{background:var(--paper);color:var(--ink);width:100%;max-width:520px;max-height:85%;overflow:auto;border-radius:18px 18px 0 0;
+  padding:18px 18px calc(18px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:10px}
+.sheet h2{font:800 22px var(--serif);margin:0}
+.sheet .btn{background:#E6DABF}
+.sheet .btn.gold{background:var(--gold)}
+.sheet .btn.ghost{color:var(--ink);border-color:rgba(0,0,0,.25)}
+.rules{font-size:14px;line-height:1.5}
+.rules h4{font:800 16px var(--serif);margin:12px 0 4px}
+.rules ul{margin:0;padding-left:18px}
+#toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 60px);transform:translateX(-50%);background:var(--ink);color:var(--paper);
+  padding:10px 16px;border-radius:12px;font-size:14px;z-index:40;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90%}
+#toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="toast"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
+<script>
+/* =====================================================================
+   FIREBASE AYARLARI
+   Schulwegplan dosyandaki firebaseConfig'i buraya kopyala.
+   Önemli: databaseURL mutlaka dolu olmalı (Realtime Database adresi).
+   Veriler "chimera/rooms/..." altında, Schulwegplan verilerinden ayrı durur.
+   ===================================================================== */
+const firebaseConfig = {
+  apiKey: "BURAYA_API_KEY",
+  authDomain: "schulwegend.firebaseapp.com",
+  databaseURL: "BURAYA_DATABASE_URL",
+  projectId: "schulwegend",
+  storageBucket: "",
+  messagingSenderId: "",
+  appId: ""
+};
+</script>
+
+<script>
+// ===ENGINE-START===
+/* ---------------- Oyun motoru (kurallar) ----------------
+   Kart kimlikleri: aile harfi + değer. j=Jade, s=Schwert, p=Pagode, t=Stern
+   Değer 1..12 sayı, 13 = Kahraman (Held). "P" = Pi Ya (14), "C" = Kimera (15). */
+const SUITS=['j','s','p','t'];
+function makeDeck(){const d=[];for(const s of SUITS)for(let v=1;v<=13;v++)d.push(s+v);d.push('P','C');return d;}
+function cv(id){return id==='P'?14:id==='C'?15:parseInt(id.slice(1),10);}
+function suitOf(id){return (id==='P'||id==='C')?'z':id[0];}
+function sortHand(h){return h.slice().sort((a,b)=>cv(a)-cv(b)||SUITS.indexOf(suitOf(a))-SUITS.indexOf(suitOf(b)));}
+function rnd(n){if(typeof crypto!=='undefined'&&crypto.getRandomValues){const a=new Uint32Array(1);crypto.getRandomValues(a);return a[0]%n;}return Math.floor(Math.random()*n);}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=rnd(i+1);[a[i],a[j]]=[a[j],a[i]];}return a;}
+function countVals(vals){const m={};vals.forEach(v=>m[v]=(m[v]||0)+1);return m;}
+function isRun(keys){for(let i=1;i<keys.length;i++)if(keys[i]!==keys[i-1]+1)return false;return true;}
+
+function straightRank(vals){
+  const n=vals.length,p=vals.filter(v=>v===14).length;
+  if(p>1)return 0;
+  const nv=vals.filter(v=>v!==14);
+  if(nv.some(v=>v>12))return 0;
+  if(new Set(nv).size!==nv.length)return 0;
+  const mn=Math.min(...nv),mx=Math.max(...nv),span=mx-mn+1;
+  if(p===0)return span===n?mx:0;
+  if(span===n)return mx;                 // Pi Ya doldurur (8-9-10-P-12)
+  if(span===n-1){if(mx<12)return mx+1; if(mn>1)return mx;} // Pi Ya uca eklenir
+  return 0;
+}
+
+/* Bir kart grubunun olası tüm yorumları: {type,len,rank} */
+function analyze(ids){
+  const n=ids.length;if(!n)return[];
+  const vals=ids.map(cv),c=countVals(vals);
+  const keys=Object.keys(c).map(Number).sort((a,b)=>a-b);
+  const hasP=!!c[14],hasC=!!c[15];
+  const out=[];
+  const add=(type,len,rank)=>{if(!out.some(o=>o.type===type&&o.len===len&&o.rank===rank))out.push({type,len,rank});};
+
+  if(n===1)add('single',1,vals[0]);
+  if(n===2){if(hasP&&hasC)add('attack',1,99);else if(keys.length===1&&keys[0]<=13)add('pair',1,keys[0]);}
+  if(n===3&&keys.length===1&&keys[0]<=13)add('triple',1,keys[0]);
+  if(n===4){
+    if(keys.length===1&&keys[0]<=13)add('trap',1,keys[0]);
+    if(keys.length===2)for(const k of keys)if(c[k]===3&&k<=13)add('triple1',1,k);
+  }
+  if(n===5&&keys.length===2){
+    const[a,b]=keys;const tv=c[a]===3?a:(c[b]===3?b:null);
+    if(tv!==null){const pv=tv===a?b:a;if(c[pv]===2&&tv<=13&&pv<=13)add('triplePair',1,tv);}
+  }
+  if(n>=6&&n%2===0&&keys.every(k=>k<=12&&c[k]===2)&&isRun(keys))add('pairSeq',n/2,keys[keys.length-1]);
+  if(n>=6&&n%3===0&&keys.every(k=>k<=12&&c[k]===3)&&isRun(keys))add('tripleSeq',n/3,keys[keys.length-1]);
+  if(n>=5){const r=straightRank(vals);if(r)add('straight',n,r);}
+  if(n===6){
+    for(const q of keys)if(q<=13&&c[q]===4){
+      const rest=vals.filter(v=>v!==q);
+      if(rest.length===2&&rest[0]!==rest[1]&&!(rest.includes(14)&&rest.includes(15)))add('quad2',1,q);
+    }
+  }
+  if(n===8){
+    for(const q of keys)if(q<=13&&c[q]===4){
+      const rk=keys.filter(k=>k!==q);
+      if(rk.length===2&&rk.every(k=>c[k]===2&&k<=13))add('quad2Pairs',1,q);
+    }
+  }
+  if(n>=8&&n%4===0){ // üçlü serisi + her birine 1 tek kart
+    const k=n/4;
+    for(let s=1;s+k-1<=12;s++){
+      const rest={...c};let ok=true;
+      for(let v=s;v<s+k;v++){if((rest[v]||0)<3){ok=false;break;}rest[v]-=3;}
+      if(!ok)continue;
+      const left=[];for(const key in rest)for(let i=0;i<rest[key];i++)left.push(Number(key));
+      if(left.length!==k||new Set(left).size!==k)continue;
+      if(left.some(v=>v>=s&&v<s+k))continue;
+      if(left.includes(14)&&left.includes(15))continue;
+      add('tripleSeq1',k,s+k-1);
+    }
+  }
+  if(n>=10&&n%5===0){ // üçlü serisi + her birine 1 çift
+    const k=n/5;
+    for(let s=1;s+k-1<=12;s++){
+      const rest={...c};let ok=true;
+      for(let v=s;v<s+k;v++){if(rest[v]!==3){ok=false;break;}rest[v]=0;}
+      if(!ok)continue;
+      const pk=Object.keys(rest).map(Number).filter(x=>rest[x]>0);
+      if(pk.length!==k||!pk.every(x=>rest[x]===2&&x<=13))continue;
+      add('tripleSeqPair',k,s+k-1);
+    }
+  }
+  return out;
+}
+
+function beats(cand,top){
+  if(!top)return true;
+  if(top.type==='attack')return false;
+  if(cand.type==='attack')return true;
+  if(cand.type==='trap')return top.type!=='trap'||cand.rank>top.rank;
+  return cand.type===top.type&&cand.len===top.len&&cand.rank>top.rank;
+}
+
+function treasure(pile){return pile.reduce((s,id)=>{const v=cv(id);return s+(v===2?10:v===11?5:0);},0);}
+function pushLog(st,e){st.log=(st.log||[]).concat([e]).slice(-40);}
+
+function dealInto(st,redealt){
+  const deck=shuffle(makeDeck());
+  const cut=20+rnd(15);               // "ungefähr in der Mitte" abheben -> açık kart
+  st.faceUp=deck[cut];
+  st.hideout=deck.slice(0,3);         // Versteck der Chimäre
+  st.hands=[[],[],[]];
+  for(let i=3;i<deck.length;i++){const seat=(st.dealer+1+(i-3))%3;st.hands[seat].push(deck[i]);if(i===cut)st.faceUpSeat=seat;}
+  st.hands=st.hands.map(sortHand);
+  st.bid={high:0,by:-1,turn:st.faceUpSeat,passes:0,redealt:!!redealt,acts:[null,null,null]};
+  st.phase='bid';st.chim=-1;st.turn=st.faceUpSeat;
+  st.piles=[[],[],[]];st.played=[false,false,false];st.traps=0;st.attack=false;
+  st.trick={top:null,cards:[],passes:0,pz:[false,false,false]};
+  st.exchange=null;st.result=null;st.fresh=[[],[],[]];
+}
+
+function newGame(limit,dealer){
+  const st={phase:'bid',limit:limit||400,scores:[0,0,0],round:1,dealer:dealer||0,log:[],history:[]};
+  dealInto(st,false);return st;
+}
+
+function startPlay(st){st.phase='play';st.turn=st.chim;st.trick={top:null,cards:[],passes:0,pz:[false,false,false]};}
+
+function finishBid(st){
+  const c=st.bid.by;st.chim=c;
+  st.hands[c]=sortHand(st.hands[c].concat(st.hideout));
+  st.fresh[c]=st.hideout.slice();
+  const n={20:0,30:1,40:2}[st.bid.high];
+  pushLog(st,{k:'chimIs',s:c,v:st.bid.high});
+  if(n===0)startPlay(st);
+  else{st.phase='exchange';st.exchange={n,give:[null,null,null]};st.turn=-1;}
+  return st;
+}
+
+function endRound(st,winner){
+  const bid=st.bid.high,ch=st.chim,hunters=[0,1,2].filter(s=>s!==ch),chimOut=winner===ch;
+  const r={winner,chimOut,bid,chim:ch,base:[0,0,0],bonus:[0,0,0],bon:[],tre:[0,0,0],delta:[0,0,0]};
+  if(chimOut){
+    r.base[ch]=2*bid;
+    if(st.traps)r.bon.push({k:'traps',n:st.traps,p:25*st.traps});
+    if(st.attack)r.bon.push({k:'attack',p:25});
+    if(hunters.some(h=>!st.played[h]))r.bon.push({k:'silent',p:25});
+    r.bonus[ch]=r.bon.reduce((s,b)=>s+b.p,0);
+  }else{
+    r.base[ch]=-bid;hunters.forEach(h=>r.base[h]=20);
+  }
+  for(let s=0;s<3;s++){r.tre[s]=treasure(st.piles[s]);r.delta[s]=r.base[s]+r.bonus[s]+r.tre[s];st.scores[s]+=r.delta[s];}
+  st.result=r;st.history=(st.history||[]).concat([r.delta]);st.turn=-1;
+  const mx=Math.max(...st.scores);
+  if(mx>=st.limit&&st.scores.filter(x=>x===mx).length===1){st.phase='over';st.winner=st.scores.indexOf(mx);}
+  else st.phase='roundEnd';
+  return st;
+}
+
+/* Bir oyuncu eylemini uygular. Geçersizse null döner. */
+function applyAction(st0,seat,a){
+  const st=JSON.parse(JSON.stringify(st0));
+  if(seat<0||seat>2)return null;
+  switch(a.t){
+    case 'bid':{
+      if(st.phase!=='bid'||st.bid.turn!==seat)return null;
+      const b=st.bid;
+      if(a.v==='pass'){
+        b.passes++;b.acts[seat]='pass';pushLog(st,{s:seat,k:'bidPass'});
+        if(b.high>0&&b.passes>=2)return finishBid(st);
+        if(b.high===0&&b.passes>=3){
+          if(!b.redealt){pushLog(st,{k:'redeal'});dealInto(st,true);return st;}
+          b.high=20;b.by=st.faceUpSeat;b.passes=0;b.acts=[null,null,null];b.acts[st.faceUpSeat]=20;
+          pushLog(st,{s:st.faceUpSeat,k:'forced'});
+          b.turn=(st.faceUpSeat+1)%3;st.turn=b.turn;return st;
+        }
+        b.turn=(seat+1)%3;st.turn=b.turn;return st;
+      }
+      const v=Number(a.v);
+      if(![20,30,40].includes(v)||v<=b.high)return null;
+      b.high=v;b.by=seat;b.passes=0;b.acts[seat]=v;pushLog(st,{s:seat,k:'bid',v});
+      if(v===40)return finishBid(st);
+      b.turn=(seat+1)%3;st.turn=b.turn;return st;
+    }
+    case 'give':{
+      if(st.phase!=='exchange'||seat===st.chim||st.exchange.give[seat])return null;
+      const ids=a.ids,hand=st.hands[seat];
+      if(!Array.isArray(ids)||ids.length!==st.exchange.n||new Set(ids).size!==ids.length||!ids.every(i=>hand.includes(i)))return null;
+      st.exchange.give[seat]=ids;
+      const hs=[0,1,2].filter(s=>s!==st.chim);
+      if(hs.every(s=>st.exchange.give[s])){
+        const[x,y]=hs,gx=st.exchange.give[x],gy=st.exchange.give[y];
+        st.hands[x]=sortHand(st.hands[x].filter(i=>!gx.includes(i)).concat(gy));
+        st.hands[y]=sortHand(st.hands[y].filter(i=>!gy.includes(i)).concat(gx));
+        st.fresh[x]=gy.slice();st.fresh[y]=gx.slice();
+        pushLog(st,{k:'swapped'});startPlay(st);
+      }
+      return st;
+    }
+    case 'play':{
+      if(st.phase!=='play'||st.turn!==seat)return null;
+      const ids=a.ids,hand=st.hands[seat];
+      if(!Array.isArray(ids)||!ids.length||new Set(ids).size!==ids.length||!ids.every(i=>hand.includes(i)))return null;
+      const opts=analyze(ids).filter(o=>beats(o,st.trick.top));
+      if(!opts.length)return null;
+      let o=opts[0];
+      if(a.pick){const m=opts.find(x=>x.type===a.pick.type&&x.len===a.pick.len&&x.rank===a.pick.rank);if(m)o=m;}
+      st.hands[seat]=hand.filter(i=>!ids.includes(i));
+      st.trick.cards=st.trick.cards.concat(ids);
+      st.trick.top={by:seat,type:o.type,len:o.len,rank:o.rank,cards:sortHand(ids)};
+      st.trick.passes=0;st.trick.pz=[false,false,false];
+      st.played[seat]=true;st.fresh[seat]=[];
+      if(o.type==='trap')st.traps++;
+      if(o.type==='attack')st.attack=true;
+      pushLog(st,{s:seat,k:'play',c:{type:o.type,len:o.len,rank:o.rank}});
+      if(!st.hands[seat].length){st.piles[seat]=st.piles[seat].concat(st.trick.cards);pushLog(st,{s:seat,k:'out'});return endRound(st,seat);}
+      st.turn=(seat+1)%3;return st;
+    }
+    case 'pass':{
+      if(st.phase!=='play'||st.turn!==seat||!st.trick.top)return null;
+      st.trick.passes++;st.trick.pz[seat]=true;pushLog(st,{s:seat,k:'pass'});
+      if(st.trick.passes>=2){
+        const w=st.trick.top.by;
+        st.piles[w]=st.piles[w].concat(st.trick.cards);
+        st.trick={top:null,cards:[],passes:0,pz:[false,false,false]};
+        st.turn=w;pushLog(st,{s:w,k:'took'});
+      }else st.turn=(seat+1)%3;
+      return st;
+    }
+    case 'next':{
+      if(st.phase!=='roundEnd')return null;
+      st.round++;st.dealer=(st.dealer+1)%3;st.log=[];dealInto(st,false);return st;
+    }
+    case 'restart':{
+      if(st.phase!=='over')return null;
+      return newGame(st.limit,(st.dealer+1)%3);
+    }
+  }
+  return null;
+}
+// ===ENGINE-END===
+</script>
+
+<script>
+/* ---------------- Metinler (TR / DE) ---------------- */
+const L={
+tr:{
+  tagline:'3 kişilik kart oyunu · gerçek zamanlı',
+  yourName:'Adın',namePh:'ör. Fırat',create:'Yeni oda aç',joinTitle:'Odaya katıl',codePh:'Oda kodu',join:'Katıl',
+  needName:'Önce adını yaz.',noRoom:'Bu kodla oda bulunamadı.',full:'Oda dolu. Hangi oyuncu sensin?',
+  room:'Oda',shareLink:'Linki paylaş',copied:'Link kopyalandı',seats:'Oyuncular',free:'boş yer',you:'sen',
+  limit:'Puan limiti',start:'Oyunu başlat',needThree:'3 oyuncu gerekli',leave:'Odadan çık',hostOnly:'Limiti odayı açan seçer',
+  player:'Oyuncu',cards:'kart',pile:'Alınan',chim:'Kimera',hunter:'Avcı',yourTurn:'Sıra sende',
+  faceUp:'Açık kart:',noBid:'Henüz teklif yok',highBid:'En yüksek: {v} ({n})',yourBid:'Teklif ver ya da pas geç',
+  waitingFor:'{n} bekleniyor…',redealtNote:'Yeniden dağıtıldı – herkes yine pas geçerse açık kart sahibi otomatik 20 der.',
+  pass:'Pas',play:'Oyna',clear:'Temizle',give:'{n} kart ver',
+  exChim:'Avcılar kart değiştiriyor…',exPick:'{n} kartını {p} için seç',exWait:'{p} bekleniyor…',
+  hideoutAdded:'Saklanan 3 kart eline eklendi (altın noktalı).',
+  youLead:'Sen açıyorsun',leads:'{n} açıyor',pickLead:'Açmak için kart seç',pickBeat:'Daha yüksek aynı kombinasyonu seç ya da pas geç',
+  wait:'Sıranı bekle',invalid:'Geçerli bir kombinasyon değil',tooLow:'yetmiyor',
+  trapsTag:'Tuzak ×{n}',attackTag:'Kimera saldırısı oynandı',
+  roundOf:'{r}. el',chimWins:'{n} (Kimera) önce bitirdi',huntWins:'{n} (Avcı) önce bitirdi',
+  colBase:'Temel',colBonus:'Bonus',colTre:'Hazine',colRound:'El',colTotal:'Toplam',
+  bonTraps:'{n} tuzak',bonAttack:'Kimera saldırısı',bonSilent:'Hiç kart oynamayan avcı',
+  next:'Sonraki el',gameOver:'{n} kazandı!',newGame:'Yeni oyun',
+  menu:'Menü',rules:'Kurallar',lang:'Deutsch',close:'Kapat',
+  notAllowed:'Bu hamle şu an geçerli değil',netErr:'Bağlantı hatası – tekrar dene',
+  pickInterp:'Nasıl oynamak istiyorsun?',seatTaken:'Bu koltuk başka bir cihaza geçti.',
+  setupTitle:'Firebase ayarı eksik',setupText:'index.html içindeki firebaseConfig alanına Schulwegplan’daki Firebase bilgilerini (özellikle databaseURL) yapıştır.',
+  claim:'{n} benim',connecting:'Bağlanıyor…',
+  log:{bidPass:'{n} pas',bid:'{n}: {v}',redeal:'Herkes pas geçti – yeniden dağıtıldı',forced:'{n} otomatik 20 teklif etti',
+       chimIs:'{n} Kimera oldu ({v})',swapped:'Avcılar kart değiştirdi',play:'{n}: {c}',pass:'{n} pas',took:'{n} eli aldı',out:'{n} kartlarını bitirdi'},
+  rn:{13:'Kahraman',14:'Pi Ya',15:'Kimera'},
+  combo:{
+    single:o=>`Tek ${o.r}`,pair:o=>`Çift ${o.r}`,triple:o=>`Üçlü ${o.r}`,triple1:o=>`Üçlü ${o.r} + 1`,
+    triplePair:o=>`Üçlü ${o.r} + çift`,quad2:o=>`Dörtlü ${o.r} + 2 kart`,quad2Pairs:o=>`Dörtlü ${o.r} + 2 çift`,
+    trap:o=>`Tuzak ${o.r}`,attack:()=>`Kimera saldırısı`,
+    straight:o=>`${o.len}'li sıra, ${o.r}'e kadar`,pairSeq:o=>`${o.len} çift serisi, ${o.r}'e kadar`,
+    tripleSeq:o=>`${o.len} üçlü serisi, ${o.r}'e kadar`,tripleSeq1:o=>`${o.len} üçlü + tekler, ${o.r}'e kadar`,
+    tripleSeqPair:o=>`${o.len} üçlü + çiftler, ${o.r}'e kadar`},
+  rulesHTML:`
+<h4>Kartlar</h4><ul><li>4 aile × 1–12, her ailede 1 Kahraman (H), ayrıca Pi Ya ve Kimera: 54 kart.</li>
+<li>Hazineler: her 2 (kurbağa) 10 puan, her 11 (kedi) 5 puan – kendi aldığın ellerde.</li>
+<li>Sıra: 1…12 &lt; Kahraman &lt; Pi Ya &lt; Kimera.</li></ul>
+<h4>Teklif</h4><ul><li>3 kart “Kimera’nın saklanağı”, herkese 17 kart. Açık kartı alan başlar.</li>
+<li>20, 30 veya 40 teklif et ya da pas geç. 40 ya da bir tekliften sonra iki pas biter.</li>
+<li>Herkes pas: yeniden dağıt. Yine herkes pas: açık kart sahibi otomatik 20.</li>
+<li>En yüksek teklif veren Kimera olur, saklanan 3 kartı alır (20 kart). Avcılar 30’da 1, 40’ta 2 kart değişir.</li></ul>
+<h4>Oyun</h4><ul><li>Kimera açar. Aynı türde ve aynı uzunlukta daha yüksek kombinasyon oyna ya da pas geç.</li>
+<li>Tuzak (saf dörtlü) her şeyin üstüne gelir; sadece daha yüksek tuzak ya da Kimera saldırısı (Pi Ya + Kimera) onu yener.</li>
+<li>Arka arkaya 2 pas: son oynayan eli alır ve yeniden açar. Kartını ilk bitiren eli kapatır.</li></ul>
+<h4>Kombinasyonlar</h4><ul><li>Tek, çift, üçlü (H dahil); en az 3 ardışık çift; en az 2 ardışık üçlü (1–12).</li>
+<li>Üçlü + 1 kart, üçlü + çift; üçlü serisi + her birine farklı tek kart / farklı çift.</li>
+<li>Sıra: en az 5 ardışık (1–12); Pi Ya bir değerin yerine joker olabilir.</li>
+<li>Dörtlü + 2 farklı kart, dörtlü + 2 farklı çift (bunlar tuzak sayılmaz).</li></ul>
+<h4>Puanlama</h4><ul><li>Kimera önce biterse: teklifin 2 katı + her tuzak için 25, Kimera saldırısı için 25, hiç kart oynamamış avcı varsa 25.</li>
+<li>Bir avcı önce biterse: Kimera teklif kadar kaybeder, iki avcı da 20 alır.</li>
+<li>Herkes kendi hazinelerini ekler. Limit (varsayılan 400) aşılınca en yüksek puan kazanır; beraberlikte devam.</li></ul>`
+},
+de:{
+  tagline:'Kartenspiel für 3 · in Echtzeit',
+  yourName:'Dein Name',namePh:'z. B. Fırat',create:'Neuen Raum öffnen',joinTitle:'Raum beitreten',codePh:'Raumcode',join:'Beitreten',
+  needName:'Bitte zuerst deinen Namen eingeben.',noRoom:'Kein Raum mit diesem Code gefunden.',full:'Der Raum ist voll. Welcher Spieler bist du?',
+  room:'Raum',shareLink:'Link teilen',copied:'Link kopiert',seats:'Spieler',free:'freier Platz',you:'du',
+  limit:'Punktelimit',start:'Spiel starten',needThree:'3 Spieler nötig',leave:'Raum verlassen',hostOnly:'Das Limit wählt, wer den Raum geöffnet hat',
+  player:'Spieler',cards:'Karten',pile:'Stiche',chim:'Chimäre',hunter:'Jäger',yourTurn:'Du bist dran',
+  faceUp:'Aufgedeckt:',noBid:'Noch kein Gebot',highBid:'Höchstes: {v} ({n})',yourBid:'Bieten oder passen',
+  waitingFor:'Warte auf {n} …',redealtNote:'Neu ausgeteilt – passen wieder alle, bietet der Spieler mit der aufgedeckten Karte automatisch 20.',
+  pass:'Passen',play:'Ausspielen',clear:'Leeren',give:'{n} Karte(n) geben',
+  exChim:'Die Jäger tauschen …',exPick:'Wähle {n} Karte(n) für {p}',exWait:'Warte auf {p} …',
+  hideoutAdded:'Die 3 Karten aus dem Versteck sind in deiner Hand (goldener Punkt).',
+  youLead:'Du eröffnest',leads:'{n} eröffnet',pickLead:'Karten zum Eröffnen wählen',pickBeat:'Gleiche, höhere Kombination wählen oder passen',
+  wait:'Warte auf deinen Zug',invalid:'Keine gültige Kombination',tooLow:'zu niedrig',
+  trapsTag:'Falle ×{n}',attackTag:'Chimären-Angriff gespielt',
+  roundOf:'Runde {r}',chimWins:'{n} (Chimäre) war zuerst fertig',huntWins:'{n} (Jäger) war zuerst fertig',
+  colBase:'Basis',colBonus:'Bonus',colTre:'Schätze',colRound:'Runde',colTotal:'Gesamt',
+  bonTraps:'{n} Falle(n)',bonAttack:'Chimären-Angriff',bonSilent:'Jäger ohne ausgespielte Karte',
+  next:'Nächste Runde',gameOver:'{n} gewinnt!',newGame:'Neues Spiel',
+  menu:'Menü',rules:'Regeln',lang:'Türkçe',close:'Schließen',
+  notAllowed:'Dieser Zug ist gerade nicht erlaubt',netErr:'Verbindungsfehler – nochmal versuchen',
+  pickInterp:'Wie willst du ausspielen?',seatTaken:'Dieser Platz wurde von einem anderen Gerät übernommen.',
+  setupTitle:'Firebase-Einstellungen fehlen',setupText:'Trage in index.html bei firebaseConfig die Firebase-Daten aus dem Schulwegplan ein (vor allem databaseURL).',
+  claim:'Ich bin {n}',connecting:'Verbinde …',
+  log:{bidPass:'{n} passt',bid:'{n}: {v}',redeal:'Alle haben gepasst – neu ausgeteilt',forced:'{n} bietet automatisch 20',
+       chimIs:'{n} ist die Chimäre ({v})',swapped:'Die Jäger haben getauscht',play:'{n}: {c}',pass:'{n} passt',took:'{n} nimmt den Stich',out:'{n} hat alle Karten ausgespielt'},
+  rn:{13:'Held',14:'Pi Ya',15:'Chimäre'},
+  combo:{
+    single:o=>`Einzelkarte ${o.r}`,pair:o=>`Paar ${o.r}`,triple:o=>`Drilling ${o.r}`,triple1:o=>`Drilling ${o.r} + 1`,
+    triplePair:o=>`Drilling ${o.r} + Paar`,quad2:o=>`Vierling ${o.r} + 2 Karten`,quad2Pairs:o=>`Vierling ${o.r} + 2 Paare`,
+    trap:o=>`Falle ${o.r}`,attack:()=>`Chimären-Angriff`,
+    straight:o=>`Reihe aus ${o.len} bis ${o.r}`,pairSeq:o=>`Folge von ${o.len} Paaren bis ${o.r}`,
+    tripleSeq:o=>`Folge von ${o.len} Drillingen bis ${o.r}`,tripleSeq1:o=>`${o.len} Drillinge + Einzelkarten bis ${o.r}`,
+    tripleSeqPair:o=>`${o.len} Drillinge + Paare bis ${o.r}`},
+  rulesHTML:`
+<h4>Karten</h4><ul><li>4 Familien × 1–12, je 1 Held (H), dazu Pi Ya und Chimäre: 54 Karten.</li>
+<li>Schätze im eigenen Stichstapel: jede 2 (Glückskröte) 10 Punkte, jede 11 (Winkekatze) 5 Punkte.</li>
+<li>Rang: 1…12 &lt; Held &lt; Pi Ya &lt; Chimäre.</li></ul>
+<h4>Bieten</h4><ul><li>3 Karten ins Versteck, je 17 Karten. Wer die aufgedeckte Karte hat, beginnt.</li>
+<li>20, 30 oder 40 bieten oder passen. Ende bei 40 oder wenn nach einem Gebot 2 Spieler nacheinander passen.</li>
+<li>Alle passen: neu austeilen. Wieder alle: Spieler mit aufgedeckter Karte bietet automatisch 20.</li>
+<li>Höchstbietender wird Chimäre und nimmt das Versteck (20 Karten). Jäger tauschen bei 30 eine, bei 40 zwei Karten.</li></ul>
+<h4>Spielverlauf</h4><ul><li>Die Chimäre eröffnet. Gleiche Kombination (gleiche Länge) mit höherem Wert spielen oder passen.</li>
+<li>Falle (reiner Vierling) geht immer; danach nur höhere Falle oder Chimären-Angriff (Pi Ya + Chimäre).</li>
+<li>2 Spieler passen nacheinander: Letzter Spieler nimmt den Stich und eröffnet. Wer zuerst keine Karten mehr hat, beendet die Runde.</li></ul>
+<h4>Kombinationen</h4><ul><li>Einzelkarte, Paar, Drilling (mit Helden); Folge ab 3 Paaren; Folge ab 2 Drillingen (1–12).</li>
+<li>Drilling + 1 Karte, Drilling + Paar; Drillingsfolge + je eine verschiedene Karte / je ein verschiedenes Paar.</li>
+<li>Reihe ab 5 Karten (1–12); Pi Ya als Joker für einen Wert.</li>
+<li>Vierling + 2 verschiedene Karten, Vierling + 2 verschiedene Paare (keine Fallen).</li></ul>
+<h4>Wertung</h4><ul><li>Chimäre zuerst fertig: doppeltes Gebot + je 25 pro Falle, 25 für Chimären-Angriff, 25 wenn ein Jäger nichts ausgespielt hat.</li>
+<li>Ein Jäger zuerst fertig: Chimäre verliert ihr Gebot, jeder Jäger erhält 20.</li>
+<li>Alle werten ihre Schätze. Ab dem Limit (Standard 400) gewinnt der Höchste; bei Gleichstand weiter.</li></ul>`
+}};
+let lang=localStorage.getItem('chim_lang')||'tr';
+function t(k,p){let s=L[lang][k];if(s===undefined)s=L.tr[k];if(s===undefined)s=k;if(p)for(const x in p)s=s.split('{'+x+'}').join(p[x]);return s;}
+function rn(v){return v<=12?String(v):L[lang].rn[v];}
+function comboText(o){return L[lang].combo[o.type]({len:o.len,r:rn(o.rank)});}
+
+/* ---------------- Zustand & Firebase ---------------- */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let CID=localStorage.getItem('chim_cid');
+if(!CID){CID=Math.random().toString(36).slice(2)+Date.now().toString(36);localStorage.setItem('chim_cid',CID);}
+let db=null,roomRef=null,roomCode=null,mySeat=-1,players={},meta=null,ST=null;
+let sel=new Set(),view='home',overlay=null,listeners=[],homeErr='',busy=false;
+
+function initFirebase(){
+  if(!firebaseConfig.apiKey||firebaseConfig.apiKey.startsWith('BURAYA')||!firebaseConfig.databaseURL||firebaseConfig.databaseURL.startsWith('BURAYA')){view='setup';return false;}
+  firebase.initializeApp(firebaseConfig);db=firebase.database();return true;
+}
+async function ensureAuth(){
+  try{if(!firebase.auth||firebase.auth().currentUser)return;
+    await Promise.race([firebase.auth().signInAnonymously(),new Promise(r=>setTimeout(r,6000))]);
+  }catch(e){console.warn('Anonymous auth:',e&&e.code);}
+}
+function getName(){return(localStorage.getItem('chim_name')||'').trim().slice(0,16);}
+function genCode(){const A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let s='';for(let i=0;i<4;i++)s+=A[rnd(A.length)];return s;}
+function seatName(s){const p=players['s'+s];return p&&p.name?p.name:t('player')+' '+(s+1);}
+function isOnline(s){const p=players['s'+s];return !!(p&&p.cid&&p.on!==false);}
+function seatCount(){return [0,1,2].filter(i=>players['s'+i]&&players['s'+i].cid).length;}
+
+let toastTimer=null;
+function toast(msg){const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),2600);}
+
+async function createRoom(){
+  if(!getName()){homeErr=t('needName');render();return;}
+  busy=true;render();
+  try{
+    await ensureAuth();
+    for(let i=0;i<8;i++){
+      const code=genCode();
+      const res=await db.ref('chimera/rooms/'+code+'/meta').transaction(cur=>{if(cur)return;return{host:CID,limit:400,created:Date.now()};});
+      if(res.committed){busy=false;await enterRoom(code);return;}
+    }
+  }catch(e){console.error(e);homeErr=t('netErr');}
+  busy=false;render();
+}
+
+async function enterRoom(code,silent){
+  code=(code||'').toUpperCase().trim();if(!code)return;
+  if(!getName()&&!silent){homeErr=t('needName');render();return;}
+  busy=true;render();
+  try{
+    await ensureAuth();
+    const ref=db.ref('chimera/rooms/'+code);
+    const m=await ref.child('meta').once('value');
+    if(!m.exists()){busy=false;if(!silent)homeErr=t('noRoom');localStorage.removeItem('chim_room');render();return;}
+    const name=getName()||t('player');
+    const res=await ref.child('players').transaction(p=>{
+      p=p||{};
+      for(let i=0;i<3;i++){const k='s'+i;if(p[k]&&p[k].cid===CID){p[k].name=name;return p;}}
+      for(let i=0;i<3;i++){const k='s'+i;if(!p[k]||!p[k].cid){p[k]={name,cid:CID,on:true};return p;}}
+      return;
+    });
+    const val=(res.snapshot&&res.snapshot.val())||{};
+    let seat=-1;for(let i=0;i<3;i++)if(val['s'+i]&&val['s'+i].cid===CID)seat=i;
+    busy=false;
+    if(seat<0){overlay={kind:'claim',code,players:val};render();return;}
+    subscribe(code,seat);
+  }catch(e){console.error(e);busy=false;homeErr=t('netErr');render();}
+}
+
+async function claimSeat(code,seat){
+  const ref=db.ref('chimera/rooms/'+code+'/players/s'+seat);
+  await ref.update({cid:CID,name:getName()||seatName(seat),on:true});
+  overlay=null;subscribe(code,seat);
+}
+
+function unsubscribe(){listeners.forEach(f=>f());listeners=[];}
+function subscribe(code,seat){
+  unsubscribe();
+  roomCode=code;mySeat=seat;roomRef=db.ref('chimera/rooms/'+code);
+  localStorage.setItem('chim_room',code);
+  history.replaceState(null,'','?r='+code);
+  view='room';
+  const on=(path,fn)=>{const r=path?roomRef.child(path):roomRef;r.on('value',fn);listeners.push(()=>r.off('value',fn));};
+  on('meta',s=>{meta=s.val();render();});
+  on('players',s=>{
+    players=s.val()||{};
+    const me=players['s'+mySeat];
+    if(me&&me.cid&&me.cid!==CID){const msg=t('seatTaken');localLeave();toast(msg);return;}
+    render();
+  });
+  on('state',s=>{const v=s.val();const prev=ST;try{ST=v?JSON.parse(v):null;}catch(e){ST=null;}onState(prev,ST);render();});
+  const conn=db.ref('.info/connected');
+  const cfn=s=>{if(s.val()&&roomRef){const o=roomRef.child('players/s'+mySeat+'/on');o.onDisconnect().set(false);o.set(true);}};
+  conn.on('value',cfn);listeners.push(()=>conn.off('value',cfn));
+  render();
+}
+
+function localLeave(){
+  unsubscribe();localStorage.removeItem('chim_room');
+  ST=null;players={};meta=null;roomCode=null;roomRef=null;mySeat=-1;sel.clear();overlay=null;
+  history.replaceState(null,'',location.pathname);view='home';render();
+}
+async function leaveRoom(){
+  if(roomRef){
+    const o=roomRef.child('players/s'+mySeat+'/on');
+    try{await o.onDisconnect().cancel();}catch(e){}
+    try{
+      if(!ST)await roomRef.child('players/s'+mySeat).transaction(p=>{if(p&&p.cid===CID)return null;return;});
+      else await o.set(false);
+    }catch(e){}
+  }
+  localLeave();
+}
+
+function startGame(){
+  if(seatCount()<3)return;
+  const lim=(meta&&meta.limit)||400,dealer=rnd(3);
+  roomRef.child('state').transaction(cur=>{if(cur)return;return JSON.stringify(newGame(lim,dealer));});
+}
+
+function send(a){
+  if(!roomRef)return;
+  roomRef.child('state').transaction(cur=>{
+    if(cur==null)return cur;
+    let st;try{st=JSON.parse(cur);}catch(e){return;}
+    const ns=applyAction(st,mySeat,a);
+    if(!ns)return;
+    return JSON.stringify(ns);
+  },(err,ok)=>{if(err)toast(t('netErr'));else if(!ok)toast(t('notAllowed'));},false);
+}
+
+function onState(prev,cur){
+  if(!cur){sel.clear();return;}
+  const hand=(cur.hands&&cur.hands[mySeat])||[];
+  for(const id of [...sel])if(!hand.includes(id))sel.delete(id);
+  if(prev&&(prev.phase!==cur.phase||prev.round!==cur.round))sel.clear();
+  const myTurnNow=cur.turn===mySeat,myTurnBefore=prev&&prev.turn===mySeat&&prev.phase===cur.phase;
+  if(myTurnNow&&!myTurnBefore&&navigator.vibrate)navigator.vibrate(40);
+  document.title=myTurnNow?'● Chimera':'Chimera';
+}
+
+/* ---------------- Darstellung ---------------- */
+const GLY={j:'◉',s:'⚔\uFE0E',p:'▲',t:'★'};
+function cardHTML(id,o={}){
+  const v=cv(id);let cls='card',vt,g='',big;
+  if(id==='P'){cls+=' piya';vt='P';big='鵺';}
+  else if(id==='C'){cls+=' chim';vt='C';big='龍';}
+  else{const s=id[0];cls+=' s-'+s;g=GLY[s];
+    if(v===13){cls+=' hero';vt='H';big='将';}else{vt=v;big=v===2?'蛙':v===11?'猫':g;}}
+  const tr=v===2?'<i class="tr">10</i>':v===11?'<i class="tr">5</i>':'';
+  if(o.sel)cls+=' sel';if(o.fresh)cls+=' fresh';
+  const label=v<=12?`${v}`:rn(v);
+  return `<div class="${cls}" ${o.tap?`data-card="${id}" role="button" tabindex="0"`:''} aria-label="${esc(label)}"><span class="v">${vt}</span>${g?`<span class="g">${g}</span>`:''}<span class="big">${big}</span>${tr}</div>`;
+}
+function roleBadge(s){if(!ST||ST.chim<0)return'';return s===ST.chim?`<span class="role c">${t('chim')}</span>`:`<span class="role h">${t('hunter')}</span>`;}
+
+function setupHTML(){return `<div class="screen"><h1 class="brand">Chimera</h1><div class="panel"><h3>${t('setupTitle')}</h3><p class="note">${t('setupText')}</p></div></div>`;}
+
+function homeHTML(){
+  const pre=new URLSearchParams(location.search).get('r')||'';
+  return `<div class="screen">
+  <h1 class="brand">Chimera<small>${t('tagline')}</small></h1>
+  <div class="panel"><h3>${t('yourName')}</h3>
+    <input id="nameIn" maxlength="16" autocomplete="nickname" placeholder="${t('namePh')}" value="${esc(getName())}"></div>
+  <button class="btn gold" data-act="create" ${busy?'disabled':''}>${t('create')}</button>
+  <div class="panel"><h3>${t('joinTitle')}</h3>
+    <div class="row"><input id="codeIn" maxlength="4" autocapitalize="characters" placeholder="${t('codePh')}" value="${esc(pre)}" style="text-transform:uppercase;letter-spacing:.2em">
+    <button class="btn" data-act="join" ${busy?'disabled':''} style="flex:none">${t('join')}</button></div></div>
+  ${homeErr?`<p class="err">${esc(homeErr)}</p>`:''}
+  ${busy?`<p class="note">${t('connecting')}</p>`:''}
+  <button class="btn ghost" data-act="lang">${t('lang')}</button>
+  </div>`;
+}
+
+function lobbyHTML(){
+  const isHost=meta&&meta.host===CID,lim=(meta&&meta.limit)||400,n=seatCount();
+  const seats=[0,1,2].map(i=>{const p=players['s'+i];
+    if(!p||!p.cid)return `<li class="empty">${t('free')}</li>`;
+    return `<li class="${isOnline(i)?'':'off'}"><span><span class="dot"></span>${esc(p.name)}</span>${i===mySeat?`<span class="sub">${t('you')}</span>`:''}</li>`;}).join('');
+  return `<div class="screen">
+  <h1 class="brand">Chimera</h1>
+  <div class="panel"><h3>${t('room')}</h3><div class="bigcode">${esc(roomCode)}</div>
+    <button class="btn" data-act="share">${t('shareLink')}</button></div>
+  <div class="panel"><h3>${t('seats')} (${n}/3)</h3><ul class="seats">${seats}</ul></div>
+  <div class="panel"><h3>${t('limit')}</h3>
+    ${isHost?`<select id="limSel">${[300,400,500,750].map(v=>`<option value="${v}" ${v===lim?'selected':''}>${v}</option>`).join('')}</select>`
+            :`<div class="bigcode" style="font-size:30px">${lim}</div><p class="note">${t('hostOnly')}</p>`}</div>
+  <button class="btn gold" data-act="start" ${n<3?'disabled':''}>${n<3?t('needThree'):t('start')}</button>
+  <div class="row"><button class="btn ghost" data-act="rules">${t('rules')}</button><button class="btn ghost" data-act="lang">${t('lang')}</button></div>
+  <button class="btn ghost" data-act="leave">${t('leave')}</button>
+  </div>`;
+}
+
+function oppHTML(s){
+  let bub='';
+  if(ST.phase==='bid'){const a=ST.bid.acts[s];if(a==='pass')bub=`<span class="bubble pass">${t('pass')}</span>`;else if(a)bub=`<span class="bubble">${a}</span>`;}
+  else if(ST.phase==='play'&&ST.trick.pz&&ST.trick.pz[s])bub=`<span class="bubble pass">${t('pass')}</span>`;
+  else if(ST.phase==='exchange'&&s!==ST.chim&&ST.exchange.give[s])bub=`<span class="bubble">✓</span>`;
+  return `<div class="opp ${ST.turn===s?'turn':''} ${isOnline(s)?'':'off'}">
+    <div><span class="dot"></span><span class="nm">${esc(seatName(s))}</span>${roleBadge(s)}</div>
+    <div class="cnt"><span class="mini"></span><b>${ST.hands[s].length}</b><span class="sub">${t('cards')}</span></div>
+    <div class="sub">${t('pile')}: ${ST.piles[s].length}</div>${bub}</div>`;
+}
+
+function logHTML(n){
+  const items=(ST.log||[]).slice(-n).reverse().map(e=>{
+    const tpl=L[lang].log[e.k]||'';
+    return esc(tpl.split('{n}').join(e.s!==undefined?seatName(e.s):'').split('{v}').join(e.v??'').split('{c}').join(e.c?comboText(e.c):''));
+  });
+  return items.length?`<div class="log">${items.map(x=>`<div>${x}</div>`).join('')}</div>`:'';
+}
+
+function centerHTML(){
+  if(ST.phase==='bid'){
+    const b=ST.bid;
+    return `<div class="fu"><span>${t('faceUp')}</span>${cardHTML(ST.faceUp)}<span>${esc(seatName(ST.faceUpSeat))}</span></div>
+      <p class="bigmsg">${b.high?t('highBid',{v:b.high,n:esc(seatName(b.by))}):t('noBid')}</p>
+      <div>${b.turn===mySeat?t('yourBid'):t('waitingFor',{n:esc(seatName(b.turn))})}</div>
+      ${b.redealt&&!b.high?`<p class="note">${t('redealtNote')}</p>`:''}${logHTML(3)}`;
+  }
+  if(ST.phase==='exchange'){
+    const partner=[0,1,2].find(s=>s!==ST.chim&&s!==mySeat);
+    let msg;
+    if(mySeat===ST.chim)msg=t('exChim');
+    else if(ST.exchange.give[mySeat])msg=t('exWait',{p:esc(seatName(partner))});
+    else msg=t('exPick',{n:ST.exchange.n,p:esc(seatName(partner))});
+    return `<p class="bigmsg">${msg}</p>${mySeat===ST.chim?`<p class="note">${t('hideoutAdded')}</p>`:''}${logHTML(3)}`;
+  }
+  if(ST.phase==='play'){
+    const tp=ST.trick.top;
+    const tags=[];if(ST.traps)tags.push(t('trapsTag',{n:ST.traps}));if(ST.attack)tags.push(t('attackTag'));
+    const head=tp?`<div class="trick"><div class="who">${esc(seatName(tp.by))}</div>
+        <div class="cardrow">${tp.cards.map(id=>cardHTML(id)).join('')}</div><div class="combo">${esc(comboText(tp))}</div></div>`
+      :`<p class="lead">${ST.turn===mySeat?t('youLead'):t('leads',{n:esc(seatName(ST.turn))})}</p>`;
+    const fresh=(mySeat===ST.chim&&ST.fresh[mySeat]&&ST.fresh[mySeat].length&&!ST.played[mySeat])?`<p class="note">${t('hideoutAdded')}</p>`:'';
+    return head+(tags.length?`<div class="tally">${tags.map(x=>`<span class="tag">${x}</span>`).join('')}</div>`:'')+fresh+logHTML(3);
+  }
+  if(ST.phase==='roundEnd'||ST.phase==='over'){
+    const r=ST.result;
+    const title=r.chimOut?t('chimWins',{n:esc(seatName(r.winner))}):t('huntWins',{n:esc(seatName(r.winner))});
+    const rows=[0,1,2].map(s=>`<tr><td>${esc(seatName(s))} <span class="sub">${s===r.chim?t('chim'):t('hunter')}</span></td>
+      <td>${r.base[s]}</td><td>${r.bonus[s]||0}</td><td>${r.tre[s]}</td><td>${r.delta[s]>0?'+':''}${r.delta[s]}</td><td class="tot">${ST.scores[s]}</td></tr>`).join('');
+    const bon=r.bon.length?`<div class="tally">${r.bon.map(b=>`<span class="tag">+${b.p} ${b.k==='traps'?t('bonTraps',{n:b.n}):b.k==='attack'?t('bonAttack'):t('bonSilent')}</span>`).join('')}</div>`:'';
+    const over=ST.phase==='over';
+    return `<div class="sub">${t('roundOf',{r:ST.round})}</div><p class="bigmsg">${title}</p>${bon}
+      <table class="res"><tr><th></th><th>${t('colBase')}</th><th>${t('colBonus')}</th><th>${t('colTre')}</th><th>${t('colRound')}</th><th>${t('colTotal')}</th></tr>${rows}</table>
+      ${over?`<p class="bigmsg" style="color:var(--gold)">${t('gameOver',{n:esc(seatName(ST.winner))})}</p>`:''}`;
+  }
+  return '';
+}
+
+function controlsHTML(){
+  const myTurn=ST.turn===mySeat;
+  if(ST.phase==='bid'){
+    if(ST.bid.turn!==mySeat)return `<div class="hint">${t('waitingFor',{n:esc(seatName(ST.bid.turn))})}</div>`;
+    const h=ST.bid.high;
+    return `<div class="hint">${t('yourBid')}</div><div class="ctrl">
+      ${[20,30,40].map(v=>`<button class="btn gold" data-act="bid" data-v="${v}" ${v<=h?'disabled':''}>${v}</button>`).join('')}
+      <button class="btn" data-act="bid" data-v="pass">${t('pass')}</button></div>`;
+  }
+  if(ST.phase==='exchange'){
+    if(mySeat===ST.chim||ST.exchange.give[mySeat])return '';
+    const n=ST.exchange.n;
+    return `<div class="hint">${sel.size}/${n}</div><div class="ctrl"><button class="btn gold" data-act="give" ${sel.size!==n?'disabled':''}>${t('give',{n})}</button></div>`;
+  }
+  if(ST.phase==='play'){
+    const leading=!ST.trick.top,ids=[...sel],opts=ids.length?analyze(ids):[],ok=opts.filter(o=>beats(o,ST.trick.top));
+    let hint,cls='';
+    if(!ids.length)hint=myTurn?(leading?t('pickLead'):t('pickBeat')):t('wait');
+    else if(!opts.length){hint=t('invalid');cls='bad';}
+    else if(!ok.length){hint=esc(comboText(opts[0]))+' – '+t('tooLow');cls='bad';}
+    else{hint=esc(comboText(ok[0]))+(ok.length>1&&leading?' …':'');cls='good';}
+    return `<div class="hint ${cls}">${hint}</div><div class="ctrl">
+      <button class="btn ghost" data-act="clear" ${ids.length?'':'disabled'}>${t('clear')}</button>
+      <button class="btn" data-act="pass" ${myTurn&&!leading?'':'disabled'}>${t('pass')}</button>
+      <button class="btn gold" data-act="play" ${myTurn&&ok.length?'':'disabled'}>${t('play')}</button></div>`;
+  }
+  if(ST.phase==='roundEnd')return `<div class="ctrl" style="margin-top:6px"><button class="btn gold" data-act="next">${t('next')}</button></div>`;
+  if(ST.phase==='over')return `<div class="ctrl" style="margin-top:6px"><button class="btn gold" data-act="restart">${t('newGame')}</button></div>`;
+  return '';
+}
+
+function gameHTML(){
+  const a=(mySeat+1)%3,b=(mySeat+2)%3;
+  const hand=ST.hands[mySeat]||[];
+  const fresh=ST.fresh&&ST.fresh[mySeat]||[];
+  const canTap=ST.phase==='play'||(ST.phase==='exchange'&&mySeat!==ST.chim&&!ST.exchange.give[mySeat]);
+  const handHTML=hand.map(id=>cardHTML(id,{tap:canTap,sel:sel.has(id),fresh:fresh.includes(id)})).join('');
+  const myTurn=ST.turn===mySeat;
+  return `<header class="top"><button class="code" data-act="menu" aria-label="${t('menu')}">${esc(roomCode)} ☰</button>
+    <div class="scores">${[0,1,2].map(s=>`<div class="sc ${s===mySeat?'me':''}"><span>${esc(seatName(s))}</span><b>${ST.scores[s]}</b></div>`).join('')}</div>
+    <span class="lim">/${ST.limit}</span></header>
+  <div class="opps">${oppHTML(a)}${oppHTML(b)}</div>
+  <main class="center">${centerHTML()}</main>
+  <section class="me ${myTurn?'turn':''}">
+    <div class="meinfo"><span class="nm">${esc(seatName(mySeat))}</span>${roleBadge(mySeat)}<span class="sub">· ${t('pile')}: ${ST.piles[mySeat].length}</span>${myTurn?`<span class="yt">${t('yourTurn')}</span>`:''}</div>
+    <div class="hand">${handHTML}</div>
+    ${controlsHTML()}
+  </section>`;
+}
+
+function overlayHTML(){
+  if(!overlay)return'';
+  if(overlay.kind==='menu')return `<div class="ov" data-act="closeOv"><div class="sheet" data-stop="1">
+    <h2>${t('room')} ${esc(roomCode)}</h2>
+    <button class="btn" data-act="share">${t('shareLink')}</button>
+    <button class="btn" data-act="rules">${t('rules')}</button>
+    <button class="btn" data-act="lang">${t('lang')}</button>
+    <button class="btn ghost" data-act="leave">${t('leave')}</button>
+    <button class="btn gold" data-act="closeOv">${t('close')}</button></div></div>`;
+  if(overlay.kind==='rules')return `<div class="ov" data-act="closeOv"><div class="sheet" data-stop="1">
+    <h2>${t('rules')}</h2><div class="rules">${L[lang].rulesHTML}</div>
+    <button class="btn gold" data-act="closeOv">${t('close')}</button></div></div>`;
+  if(overlay.kind==='pick')return `<div class="ov" data-act="closeOv"><div class="sheet" data-stop="1">
+    <h2>${t('pickInterp')}</h2>
+    ${overlay.opts.map((o,i)=>`<button class="btn" data-act="pickGo" data-i="${i}">${esc(comboText(o))}</button>`).join('')}
+    <button class="btn ghost" data-act="closeOv">${t('close')}</button></div></div>`;
+  if(overlay.kind==='claim'){
+    const p=overlay.players||{};
+    return `<div class="ov"><div class="sheet"><h2>${t('full')}</h2>
+      ${[0,1,2].filter(i=>p['s'+i]&&p['s'+i].cid).map(i=>`<button class="btn" data-act="claim" data-i="${i}">${t('claim',{n:esc(p['s'+i].name)})}${p['s'+i].on===false?' ·  offline':''}</button>`).join('')}
+      <button class="btn ghost" data-act="closeOv">${t('close')}</button></div></div>`;
+  }
+  return '';
+}
+
+function render(){
+  document.documentElement.lang=lang;
+  const app=$('#app');
+  let html;
+  if(view==='setup')html=setupHTML();
+  else if(view==='home')html=homeHTML();
+  else if(!ST)html=lobbyHTML();
+  else html=gameHTML();
+  app.innerHTML=html+overlayHTML();
+}
+
+/* ---------------- Eingaben ---------------- */
+function shareLink(){
+  const url=location.origin+location.pathname+'?r='+roomCode;
+  if(navigator.share)navigator.share({title:'Chimera',text:'Chimera '+roomCode,url}).catch(()=>{});
+  else if(navigator.clipboard)navigator.clipboard.writeText(url).then(()=>toast(t('copied')));
+  else prompt('Link',url);
+}
+
+function toggleCard(id){
+  if(!ST)return;
+  if(ST.phase==='exchange'){
+    if(mySeat===ST.chim||ST.exchange.give[mySeat])return;
+    if(sel.has(id))sel.delete(id);else if(sel.size<ST.exchange.n)sel.add(id);
+  }else if(ST.phase==='play'){
+    if(sel.has(id))sel.delete(id);else sel.add(id);
+  }else return;
+  render();
+}
+
+function act(a,d){
+  switch(a){
+    case 'create':createRoom();break;
+    case 'join':{const c=($('#codeIn')||{}).value||'';homeErr='';enterRoom(c);break;}
+    case 'lang':lang=lang==='tr'?'de':'tr';localStorage.setItem('chim_lang',lang);if(overlay&&overlay.kind==='menu')overlay=null;render();break;
+    case 'share':shareLink();break;
+    case 'start':startGame();break;
+    case 'leave':overlay=null;leaveRoom();break;
+    case 'menu':overlay={kind:'menu'};render();break;
+    case 'rules':overlay={kind:'rules'};render();break;
+    case 'closeOv':overlay=null;render();break;
+    case 'bid':send({t:'bid',v:d.v==='pass'?'pass':Number(d.v)});break;
+    case 'give':send({t:'give',ids:[...sel]});break;
+    case 'clear':sel.clear();render();break;
+    case 'pass':send({t:'pass'});break;
+    case 'play':{
+      const ids=[...sel],ok=analyze(ids).filter(o=>beats(o,ST.trick.top));
+      if(!ok.length)return;
+      if(ok.length>1&&!ST.trick.top){overlay={kind:'pick',ids,opts:ok};render();return;}
+      send({t:'play',ids,pick:ok[0]});break;
+    }
+    case 'pickGo':{const o=overlay.opts[Number(d.i)],ids=overlay.ids;overlay=null;render();send({t:'play',ids,pick:o});break;}
+    case 'next':send({t:'next'});break;
+    case 'restart':send({t:'restart'});break;
+    case 'claim':claimSeat(overlay.code,Number(d.i));break;
+  }
+}
+
+document.addEventListener('click',e=>{
+  const c=e.target.closest('[data-card]');if(c){toggleCard(c.dataset.card);return;}
+  const b=e.target.closest('[data-act]');if(!b||b.disabled)return;
+  if(b.classList.contains('ov')&&e.target.closest('[data-stop]'))return; // Klick im Sheet schließt nicht
+  act(b.dataset.act,b.dataset);
+});
+document.addEventListener('keydown',e=>{
+  if((e.key==='Enter'||e.key===' ')&&e.target.dataset&&e.target.dataset.card){e.preventDefault();toggleCard(e.target.dataset.card);}
+  if(e.key==='Enter'&&e.target.id==='codeIn')act('join',{});
+});
+document.addEventListener('input',e=>{
+  if(e.target.id==='nameIn'){localStorage.setItem('chim_name',e.target.value.trim().slice(0,16));homeErr='';}
+});
+document.addEventListener('change',e=>{
+  if(e.target.id==='limSel'&&roomRef)roomRef.child('meta/limit').set(Number(e.target.value));
+});
+
+/* ---------------- Start ---------------- */
+(function boot(){
+  if(!initFirebase()){render();return;}
+  const urlRoom=new URLSearchParams(location.search).get('r');
+  const saved=localStorage.getItem('chim_room');
+  render();
+  if(urlRoom&&getName())enterRoom(urlRoom,true);
+  else if(!urlRoom&&saved&&getName())enterRoom(saved,true);
+})();
+</script>
+</body>
+</html>
